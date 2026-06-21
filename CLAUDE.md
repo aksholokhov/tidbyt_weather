@@ -52,9 +52,9 @@ on failure) → `build_payload()` → `render_tidbyt()` (shells out to `pixlet r
   (5 °F / 20 %) and the temperature ends labeled in °F in the freed top corners.
 - **Mark speed** (the third channel): white marks move across all four lines of the cell,
   and their step period encodes intensity — faster = more extreme. Rain → a 1px drop falling
-  per column on *humidity* cells; wind → 2px gusts sliding right in
-  alternating non-adjacent rows on *temperature* cells (so gusts never touch, yet all four
-  lines are used; phase-staggered 2/4/1/3). Buckets
+  per column on *humidity* cells; wind → two 2px gusts sliding right in
+  two fixed non-adjacent rows on *temperature* cells (purely horizontal; 2 rows apart so they
+  never touch). Buckets
   {1.5, 1, 0.5, 0.25 s}; below the lowest bucket the cell is static. Wind is judged against
   this location's **historic climatology** (wind percentiles + per-month temperature
   P3/P97), one Open-Meteo archive call cached to `cache/climatology.json`. Tables in
