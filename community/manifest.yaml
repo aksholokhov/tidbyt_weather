@@ -1,0 +1,7 @@
+id: two-week-weather
+name: Two-Week Weather
+summary: Weather two weeks ahead
+desc: A two-week weather outlook plus a today hourly strip. Temperature and humidity are shown as color with color-scale legends; rain and wind appear as animated marks whose speed encodes intensity. Pick your location; data from Open-Meteo (no key).
+author: Aleksei Sholokhov
+fileName: weather.star
+packageName: twoweekweather
