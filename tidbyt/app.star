@@ -19,8 +19,9 @@
 # all four lines of the cell; only their *speed* encodes intensity (fixed number/shape):
 #   - Rain: a humidity cell shows a single 1px drop falling in every column, the columns
 #     phase-staggered (2/4/1/3 order) so the drops are never adjacent.
-#   - Wind: a temperature cell shows a horizontal 2px gust sliding right in every row, the
-#     rows phase-staggered (2/4/1/3 order) so adjacent rows never line up.
+#   - Wind: a temperature cell shows horizontal 2px gusts sliding right; only non-adjacent
+#     rows carry a gust each frame (the lit rows alternate), so gusts never touch — even
+#     diagonally — yet all four lines are used across the loop.
 # Faster = wetter / windier. *_blink values are per-cell step periods in ms (0 = no mark),
 # multiples of 250 up to 1500; a mark advances one step every period/250 frames.
 #
@@ -73,13 +74,17 @@ def frame_rect(x, y, w, h, color):
     ]
 
 def wind_pixels(cx, cy, step, color):
-    # a horizontal 2px block flies right in EVERY row; rows are phase-staggered (the 2/4/1/3
-    # order) so adjacent rows never line up — reads as gusts blowing across the whole cell.
+    # 2px gusts slide right. A 2px block + 1px border spans the whole 4-wide cell, so two
+    # gusts in adjacent rows can't help touching — therefore only rows of the same parity as
+    # `step` are lit each frame (always >= 2 rows apart -> never touch, even diagonally). The
+    # parity flips each step, so all four lines are still used across the loop. x is staggered
+    # per row so the two gusts in a frame aren't column-aligned.
     out = []
     for r in range(CELL):
-        x = (step + LINE_PHASE[r]) % CELL
-        out.append(box_at(cx + x, cy + r, 1, 1, color))
-        out.append(box_at(cx + (x + 1) % CELL, cy + r, 1, 1, color))
+        if (r + step) % 2 == 0:
+            x = (step + LINE_PHASE[r]) % CELL
+            out.append(box_at(cx + x, cy + r, 1, 1, color))
+            out.append(box_at(cx + (x + 1) % CELL, cy + r, 1, 1, color))
     return out
 
 def rain_pixels(cx, cy, step, color):
@@ -161,7 +166,7 @@ def main(config):
 
     # Mark overlays, drawn on top of everything as a shared speed-varying animation:
     #   rain -> humidity cells, a 1px drop falling in every column
-    #   wind -> temperature cells, a 2px gust sliding right in every row
+    #   wind -> temperature cells, 2px gusts sliding right in alternating non-adjacent rows
     # Each entry is (cx, cy, period_ms); period sets how fast that cell's marks move.
     rain_cells = []  # humidity cells
     for ri in range(2):

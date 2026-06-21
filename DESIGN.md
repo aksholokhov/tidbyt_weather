@@ -4,8 +4,8 @@ A 64×32 Tidbyt tile with **two panels**: a today **hourly** strip on the left a
 **two-week outlook** grid on the right. Temperature is encoded blue→red, relative
 humidity orange→yellow→green→dark-blue. Two warning overlays add **marks that move across
 all four lines** of a cell, and their **speed encodes intensity**: humidity cells get a 1px
-drop falling in every column (rain), temperature cells get a 2px gust sliding right in every
-row (wind). The faster they move, the wetter / windier (see §3). It is one animated WebP the
+drop falling in every column (rain), temperature cells get 2px gusts sliding right in
+alternating non-adjacent rows (wind). The faster they move, the wetter / windier (see §3). It is one animated WebP the
 device loops locally, so it costs no extra pushes.
 Pushed every 3 hours by a small Python service, mirroring the existing `chickens/` app.
 
@@ -75,8 +75,10 @@ next wk  47    51    55    60    63    61    58               → row 4
   humidity cells at the now-period row).
 - The **rain/wind warnings** add two white 2 px marks that move inside a cell: vertical
   drops falling in humidity cells (rain, a 1px drop per column), gusts sliding right in
-  temperature cells (wind, a 2px gust per row), each line phase-staggered in a 2/4/1/3 order
-  so the moving marks span all four lines and never line up (rain marks never even touch). Rain marks only humidity cells (grid rows 3,4; today-panel
+  temperature cells (wind, 2px gusts in alternating non-adjacent rows), phase-staggered in a
+  2/4/1/3 order so the marks span all four lines over the loop and never touch — even
+  diagonally. (A 2px block + 1px border spans the whole 4-wide cell, so adjacent rows can't
+  both carry a gust; the lit rows alternate by parity each frame instead.) Rain marks only humidity cells (grid rows 3,4; today-panel
   slot 1); wind only temperature cells (grid rows 0,1; today-panel slot 0). Speed is the
   data channel (§3); they share one fixed **48-frame loop at `delay=250` ms**, each mark
   advancing a step every `period/250` frames. When no cell qualifies the tile renders as a
