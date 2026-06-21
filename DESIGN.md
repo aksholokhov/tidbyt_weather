@@ -2,11 +2,11 @@
 
 A 64×32 Tidbyt tile with **two panels**: a today **hourly** strip on the left and a
 **two-week outlook** grid on the right. Temperature is encoded blue→red, relative
-humidity orange→yellow→green→dark-blue. Two warning overlays add **2px marks that move**,
-and their **speed encodes intensity**: humidity cells get two vertical drops falling
-(rain), temperature cells get two horizontal gusts sliding right (wind). The faster they
-move, the wetter / windier (see §3). It is one animated WebP the device loops locally, so
-it costs no extra pushes.
+humidity orange→yellow→green→dark-blue. Two warning overlays add **marks that move across
+all four lines** of a cell, and their **speed encodes intensity**: humidity cells get a 1px
+drop falling in every column (rain), temperature cells get a 2px gust sliding right in every
+row (wind). The faster they move, the wetter / windier (see §3). It is one animated WebP the
+device loops locally, so it costs no extra pushes.
 Pushed every 3 hours by a small Python service, mirroring the existing `chickens/` app.
 
 ---
@@ -74,9 +74,9 @@ next wk  47    51    55    60    63    61    58               → row 4
   pixels. The same frame marks the **current 3h period** in the today panel (temp +
   humidity cells at the now-period row).
 - The **rain/wind warnings** add two white 2 px marks that move inside a cell: vertical
-  drops falling in humidity cells (rain, cols 0 & 2), horizontal gusts sliding right in
-  temperature cells (wind, rows 0 & 2), each pair staggered by half the cell so the two are
-  never aligned or adjacent. Rain marks only humidity cells (grid rows 3,4; today-panel
+  drops falling in humidity cells (rain, a 1px drop per column), gusts sliding right in
+  temperature cells (wind, a 2px gust per row), each line phase-staggered in a 2/4/1/3 order
+  so the moving marks span all four lines and never line up (rain marks never even touch). Rain marks only humidity cells (grid rows 3,4; today-panel
   slot 1); wind only temperature cells (grid rows 0,1; today-panel slot 0). Speed is the
   data channel (§3); they share one fixed **48-frame loop at `delay=250` ms**, each mark
   advancing a step every `period/250` frames. When no cell qualifies the tile renders as a
@@ -189,7 +189,7 @@ humidity spans 0…100%.
 
 ### Blink speed channel
 
-Rain and wind aren't colored — they're shown by white 2px marks that move, whose **step
+Rain and wind aren't colored — they're shown by white marks that move, whose **step
 period** encodes intensity (faster = more extreme). Periods are quantised to {1.5 s, 1 s,
 0.5 s, 0.25 s}; below the lowest bucket the cell doesn't animate.
 

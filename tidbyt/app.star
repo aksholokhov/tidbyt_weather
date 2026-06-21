@@ -15,12 +15,12 @@
 # above it (low color left -> high right). The freed top corners hold the temperature scale
 # ends as F numbers (left = low, right = high).
 #
-# Warnings (one animation the device loops locally — no extra pushes). Each flagged cell
-# carries two 2px marks of fixed number and shape — only their *speed* encodes intensity:
-#   - Rain: a humidity cell shows two vertical 2px drops (cols 0 & 2) falling, staggered
-#     so they're never vertically aligned or adjacent.
-#   - Wind: a temperature cell shows two horizontal 2px gusts (rows 0 & 2) sliding right,
-#     staggered so they're never vertically aligned or adjacent.
+# Warnings (one animation the device loops locally — no extra pushes). Marks move across
+# all four lines of the cell; only their *speed* encodes intensity (fixed number/shape):
+#   - Rain: a humidity cell shows a single 1px drop falling in every column, the columns
+#     phase-staggered (2/4/1/3 order) so the drops are never adjacent.
+#   - Wind: a temperature cell shows a horizontal 2px gust sliding right in every row, the
+#     rows phase-staggered (2/4/1/3 order) so adjacent rows never line up.
 # Faster = wetter / windier. *_blink values are per-cell step periods in ms (0 = no mark),
 # multiples of 250 up to 1500; a mark advances one step every period/250 frames.
 #
@@ -50,7 +50,9 @@ BLINK = "#ffffff"  # white mark overlay for rain (humidity cells) / wind (temp c
 # every speed loops seamlessly within the 12s loop.
 BASE_DELAY_MS = 250
 TOTAL_FRAMES = 48
-MARK_OFFSET = 2  # second mark trails the first by half the cell (keeps them apart/unaligned)
+# Per-line phase stagger so the moving marks span all four lines without ever lining up.
+# Lines (1-indexed rows 2,4,1,3) get phases 0,1,2,3 -> phase-by-line index (0-indexed):
+LINE_PHASE = [2, 0, 3, 1]
 
 def cell_xy(r, slot):
     # weekly-grid slots (>= TW_OFFSET) slide left by DW_GAP_TRIM, tightening the gap to the
@@ -71,23 +73,22 @@ def frame_rect(x, y, w, h, color):
     ]
 
 def wind_pixels(cx, cy, step, color):
-    # two horizontal 2px gusts, in rows 0 and 2 (non-adjacent), sliding right as step grows.
-    # The second gust trails by MARK_OFFSET cols, so the two are never aligned or adjacent.
+    # a horizontal 2px block flies right in EVERY row; rows are phase-staggered (the 2/4/1/3
+    # order) so adjacent rows never line up — reads as gusts blowing across the whole cell.
     out = []
-    for row, off in ((0, 0), (2, MARK_OFFSET)):
-        x = (step + off) % CELL
-        out.append(box_at(cx + x, cy + row, 1, 1, color))
-        out.append(box_at(cx + (x + 1) % CELL, cy + row, 1, 1, color))
+    for r in range(CELL):
+        x = (step + LINE_PHASE[r]) % CELL
+        out.append(box_at(cx + x, cy + r, 1, 1, color))
+        out.append(box_at(cx + (x + 1) % CELL, cy + r, 1, 1, color))
     return out
 
 def rain_pixels(cx, cy, step, color):
-    # two vertical 2px drops, in cols 0 and 2 (non-adjacent), falling as step grows. The
-    # second drop trails by MARK_OFFSET rows, so the two are never aligned or adjacent.
+    # a single 1px drop falls in EVERY column; columns are phase-staggered (non-adjacent)
+    # so the drops never line up — reads as rain falling across the whole cell.
     out = []
-    for col, off in ((0, 0), (2, MARK_OFFSET)):
-        y = (step + off) % CELL
-        out.append(box_at(cx + col, cy + y, 1, 1, color))
-        out.append(box_at(cx + col, cy + (y + 1) % CELL, 1, 1, color))
+    for c in range(CELL):
+        y = (step + LINE_PHASE[c]) % CELL
+        out.append(box_at(cx + c, cy + y, 1, 1, color))
     return out
 
 def main(config):
@@ -159,8 +160,8 @@ def main(config):
                 layers.append(box_at(cx, cy, CELL, CELL, row[c]))
 
     # Mark overlays, drawn on top of everything as a shared speed-varying animation:
-    #   rain -> humidity cells, two vertical 2px drops falling
-    #   wind -> temperature cells, two horizontal 2px gusts sliding right
+    #   rain -> humidity cells, a 1px drop falling in every column
+    #   wind -> temperature cells, a 2px gust sliding right in every row
     # Each entry is (cx, cy, period_ms); period sets how fast that cell's marks move.
     rain_cells = []  # humidity cells
     for ri in range(2):

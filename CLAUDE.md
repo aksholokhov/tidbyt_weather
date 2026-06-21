@@ -50,9 +50,10 @@ on failure) → `build_payload()` → `render_tidbyt()` (shells out to `pixlet r
   saturating — summer isn't all red); humidity spans 0…100%. Both ramps are mirrored as
   **1px legend bars** over the daily+weekly zone, each with a color-consistent ruler row
   (5 °F / 20 %) and the temperature ends labeled in °F in the freed top corners.
-- **Mark speed** (the third channel): two white 2px marks move inside the cell, and their
-  step period encodes intensity — faster = more extreme. Rain → vertical drops falling on
-  *humidity* cells; wind → horizontal gusts sliding right on *temperature* cells. Buckets
+- **Mark speed** (the third channel): white marks move across all four lines of the cell,
+  and their step period encodes intensity — faster = more extreme. Rain → a 1px drop falling
+  per column on *humidity* cells; wind → a 2px gust sliding right per row on *temperature*
+  cells (lines phase-staggered 2/4/1/3 so they never line up). Buckets
   {1.5, 1, 0.5, 0.25 s}; below the lowest bucket the cell is static. Wind is judged against
   this location's **historic climatology** (wind percentiles + per-month temperature
   P3/P97), one Open-Meteo archive call cached to `cache/climatology.json`. Tables in
