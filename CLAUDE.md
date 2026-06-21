@@ -4,7 +4,9 @@ A small Python service that turns the weather into a **64×32 Tidbyt tile**. It 
 two-week outlook from Open-Meteo (free, no API key), computes a color grid + blink
 overlays, renders natively with Pixlet, and pushes the WEBP to the device every 3 hours.
 Two panels: a **today hourly** strip (left) and a **two-week outlook** grid (right).
-Mirrors the sibling `chickens/` service. Full rationale and worked examples: @DESIGN.md.
+Full rationale and worked examples: @DESIGN.md. This folder is its own repo
+(github.com/aksholokhov/tidbyt_weather); in this checkout it's deployed via the parent
+`home-services` docker-compose (see Commands).
 
 # Prime constraint: the 64×32 glance
 
@@ -50,10 +52,10 @@ on failure) → `build_payload()` → `render_tidbyt()` (shells out to `pixlet r
   saturating — summer isn't all red); humidity spans 0…100%. Both ramps are mirrored as
   **1px legend bars** over the daily+weekly zone, each with a color-consistent ruler row
   (5 °F / 20 %) and the temperature ends labeled in °F in the freed top corners.
-- **Mark speed** (the third channel): white marks move across all four lines of the cell,
-  and their step period encodes intensity — faster = more extreme. Rain → a 1px drop falling
-  per column on *humidity* cells; wind → two 2px gusts sliding right in
-  two fixed non-adjacent rows on *temperature* cells (purely horizontal; 2 rows apart so they
+- **Mark speed** (the third channel): white marks move within the cell, and their step
+  period encodes intensity — faster = more extreme. Rain → a 1px drop falling in every
+  column on *humidity* cells (all four columns); wind → two 2px gusts sliding right in two
+  fixed non-adjacent rows on *temperature* cells (purely horizontal; 2 rows apart so they
   never touch). Buckets
   {1.5, 1, 0.5, 0.25 s}; below the lowest bucket the cell is static. Wind is judged against
   this location's **historic climatology** (wind percentiles + per-month temperature
@@ -128,7 +130,7 @@ the cache.
 
 - Design, layout geometry, color ramps, and confirmed decisions: @DESIGN.md
 - Pixlet/Tidbyt operational lessons (shared across Tidbyt apps here): @DEVELOPING_FOR_TIDBYT.mdc
-- Commit messages follow https://cbea.ms/git-commit/; branch off master; push only after I confirm.
+- Commit messages follow https://cbea.ms/git-commit/; default branch is `main`; push only after I confirm.
 
 # Findings
 

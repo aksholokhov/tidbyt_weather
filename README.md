@@ -3,7 +3,8 @@
 A 64×32 [Tidbyt](https://tidbyt.com) tile that renders a two-week weather outlook: a today
 hourly strip on the left and a Sun–Sat two-week grid on the right. Temperature and humidity
 are encoded as color (with a per-month, climate-normalized temperature ramp and color-scale
-legends); rain and wind are shown as animated 2px marks whose **speed** encodes intensity.
+legends); rain and wind are shown as animated marks (falling drops / sliding gusts) whose
+**speed** encodes intensity.
 Data comes from [Open-Meteo](https://open-meteo.com) (free, no key). A small Flask +
 APScheduler service fetches, renders with [Pixlet](https://github.com/tidbyt/pixlet), and
 pushes to the device every few hours.
