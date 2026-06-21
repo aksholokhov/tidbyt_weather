@@ -1,0 +1,92 @@
+## Developing for Tidbyt
+
+This document captures the key lessons, rules, and gotchas we discovered while building and deploying a Pixlet-based Tidbyt app that renders financial projections and pushes them nightly to a device.
+
+### Rendering engine: use Pixlet only
+- Always render natively with Pixlet; do not downscale or upscale images.
+- Remove all Pillow/bitmap fallbacks; if Pixlet fails, fail fast and fix the root cause.
+- Render at the device’s native resolution for crisp output:
+  - Tidbyt v2: 64x32. Use 64x32 for the “real” payload.
+  - Optionally generate a separate 128x64 preview, but do not scale the 64x32 image.
+
+### Fonts and layout on a 64x32 canvas
+- Fit the layout to the pixel grid. If you need 5 lines on a 32‑pixel tall screen, the tallest font must be ≤ 6 px.
+- Use a verified, built‑in tiny font:
+  - Prefer `tom-thumb` for max density (height 6).
+  - Avoid non-existent fonts (e.g., `4x6` is not available in current Pixlet builds).
+- Match container heights to font height (for `tom-thumb`, use 6).
+- Remove vertical spacing (`render.Column` without spacing) to conserve pixels.
+- Avoid wide insets, padding, and borders that consume precious pixels.
+
+### Starlark (Pixlet) gotchas
+- Load the correct JSON module:
+  - `load("encoding/json.star", "json")` (not `json.star`).
+- Use `render.Text(content=...)` (not `text=...`).
+- Some widgets and props may be unsupported depending on Pixlet version. When in doubt, keep to:
+  - `render.Text`, `render.Box`, `render.Row`, `render.Column`, `render.Root`.
+- Avoid Python-like constructs that Starlark doesn’t support (e.g., starred list unpacking in lists).
+
+### Pixlet CLI usage
+- Pass params as positional `key=value` arguments after the `.star` file and before flags:
+
+```
+pixlet render app.star now=7 data='{"columns":["40","50"],"rows":[],"values":{}}' -o out.webp
+```
+
+- Key rules:
+  - The order matters: `render <star> <key=value>... -o <out>`.
+  - Quote JSON carefully. Single-quote the entire payload and escape internal quotes when invoked via shell.
+
+### Docker and Pixlet installation
+- Use the correct OS/arch binary for containers:
+  - Linux amd64: `pixlet_0.34.0_linux_amd64.tar.gz` (do not use `darwin`).
+- Extract the `pixlet` binary into a PATH directory (e.g., `/usr/local/bin`) and `chmod +x`.
+- Verify inside the image: `pixlet --version`.
+- In-app, resolve the `.star` path relative to the source (do not hardcode `/app/...`).
+
+### API push as an installed tile
+- Push with a stable installation ID so it shows in the Tidbyt iOS app rotation:
+  - Endpoint: `POST https://api.tidbyt.com/v0/devices/{deviceID}/push`
+  - Headers: `Authorization: Bearer <token>`, `Content-Type: application/json`
+  - Body includes:
+    - `installationID`: use a constant like `investor`
+    - `image`: base64-encoded WEBP bytes
+    - `contentType`: `image/webp`
+    - `background`: `false` to appear as a tile
+- If the tile looks stale or missing, remove and re-add it in the Tidbyt app to bust cache.
+
+### Data fetching and startup robustness
+- External data sources (e.g., Yahoo Finance, FRED) can timeout or fail.
+  - Use timeouts (e.g., 10s) and fall back to sane defaults at startup so the server responds immediately.
+  - Fetch/refresh data in the background after startup.
+  - For CPI, fetching the FRED CSV directly with a timeout is reliable.
+- Keep “live” calculations decoupled from rendering so preview/push can proceed even if a fetch fails.
+
+### Previews for rapid iteration
+- Provide HTTP endpoints that render exactly what will be pushed to the device (same resolution, fonts, and layout).
+- Also provide a larger preview if helpful, but do not conflate it with the 64x32 payload.
+
+### Scheduling nightly pushes
+- Use APScheduler (cron) inside the app to push daily at a configured time.
+  - Respect `TZ`, `TIDBYT_PUSH_HOUR`, `TIDBYT_PUSH_MINUTE`.
+  - After the push, schedule a returns refresh a minute later to keep numbers current.
+
+### Visual clarity tips for small tables
+- Avoid currency symbols and extra punctuation in dense tables.
+- Round to whole dollars for readability.
+- Use concise labels (e.g., `inv`, `pst`, `pre`) and keep headers short (e.g., `40 50 60 70`).
+- Ensure column widths and row heights are tuned per font; test in preview.
+
+### Troubleshooting checklist
+- Preview returns HTTP 200 with `image/webp` content type.
+- Direct in-container Pixlet render produces a WEBP:
+
+```
+pixlet render /app/tidbyt/app.star now=7 data='{"columns":["40"],"rows":[],"values":{}}' -o /tmp/test.webp
+```
+
+- Confirm Pixlet path and version in the container.
+- Verify Tidbyt env vars (`TIDBYT_DEVICE_ID`, `TIDBYT_API_TOKEN`, `TIDBYT_INSTALLATION_ID`) are present.
+- Confirm pushes log as 200 responses; if broken cloud appears, re-install the tile.
+- If text overlaps or blurs, reduce font size (e.g., `tom-thumb`), remove spacing, and re-test at 64x32.
+

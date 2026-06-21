@@ -1,0 +1,6 @@
+{
+  "_note": "Copy to ~/.tidbyt/weather/config.json (or point WEATHER_CONFIG at a path). Private, non-secret settings (your coordinates, HA host) go here. Secrets — TIDBYT_API_TOKEN, TIDBYT_DEVICE_ID, HASS_TOKEN — belong in the environment, not in this file. Anything here can also be supplied as an environment variable of the same name (env wins).",
+  "WEATHER_LAT": 47.6062,
+  "WEATHER_LON": -122.3321,
+  "HASS_SERVER": "https://homeassistant.local:8123"
+}

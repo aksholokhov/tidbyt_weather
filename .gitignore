@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+cache/
+config.json
+.env
+*.webp
