@@ -1,0 +1,9 @@
+id: weather
+name: Weather
+summary: Two-week temperature and humidity grid
+desc: Shows hourly temp/humidity for today and a two-week daily grid with rain and wind warnings.
+author: aksholokhov
+packageName: weather
+fileName: weather.star
+recommendedInterval: 15
+category: weather

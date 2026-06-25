@@ -33,6 +33,9 @@
 #    "temp_scale": [64 hex], "humid_scale": [64 hex]}
 load("render.star", "render")
 load("encoding/json.star", "json")
+load("http.star", "http")
+
+DATA_SERVICE_URL = "http://weather:5031/weather"
 
 X0 = 8   # daily cells start at x9 (X0+1); content is 46px wide, centred (9px margins)
 Y0 = 3   # (32 - 26)/2
@@ -95,17 +98,22 @@ def rain_pixels(cx, cy, step, color):
     return out
 
 def main(config):
-    data = json.decode(config.get("data", "{}"))
-    today_col = data.get("today_col", -1)
+    data_str = config.get("data", "")
+    if data_str:
+        data = json.decode(data_str)
+    else:
+        resp = http.get(DATA_SERVICE_URL, ttl_seconds=60)
+        data = resp.json().get("payload", {}) if resp.status_code == 200 else {}
+    today_col = int(data.get("today_col", -1))
     temp = data.get("temp", [[], []])
     humid = data.get("humid", [[], []])
-    rain_blink = data.get("rain_blink", [[], []])
-    wind_blink = data.get("wind_blink", [[], []])
+    rain_blink = [[int(v) for v in row] for row in data.get("rain_blink", [[], []])]
+    wind_blink = [[int(v) for v in row] for row in data.get("wind_blink", [[], []])]
     hourly_temp = data.get("hourly_temp", [])
     hourly_humid = data.get("hourly_humid", [])
-    hourly_rain_blink = data.get("hourly_rain_blink", [])
-    hourly_wind_blink = data.get("hourly_wind_blink", [])
-    now_period = data.get("now_period", -1)
+    hourly_rain_blink = [int(v) for v in data.get("hourly_rain_blink", [])]
+    hourly_wind_blink = [int(v) for v in data.get("hourly_wind_blink", [])]
+    now_period = int(data.get("now_period", -1))
     temp_scale = data.get("temp_scale", [])
     humid_scale = data.get("humid_scale", [])
     temp_ruler = data.get("temp_ruler", [])
